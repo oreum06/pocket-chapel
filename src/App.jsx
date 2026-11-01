@@ -257,7 +257,7 @@ function Home({ profile, setProfile, onLogout }) {
     prevStep.current = step
     if (step === prev || roomId !== 'living') return
     if (step === 0) { music.stop(); stopSpeaking(); setPose('stand'); return }
-    if (step === 1) { music.play('synth', 0); markStep('praise'); setPose('stand') }
+    if (step === 1) { music.play(CONFIG.hymns.length ? 'mp3' : 'synth', 0); markStep('praise'); setPose('stand') } // mp3 찬양이 있으면 첫 곡으로
     if (step === 2) { music.duck(true); speak(verse, () => music.duck(false)); markStep('word') }
     if (step === 3) {
       stopSpeaking()
@@ -331,7 +331,7 @@ function Home({ profile, setProfile, onLogout }) {
   const counts = {}
   for (const p of [myState, ...Object.values(peers)]) counts[p.room] = (counts[p.room] || 0) + 1
   const total = Object.keys(peers).length + 1
-  const songTitle = music.songs[0].title.replace('피아노 · ', '')
+  const songTitle = (CONFIG.hymns[0]?.title || music.songs[0].title).replace('피아노 · ', '')
 
   const SHEETS = {
     rooms: ['🏠 어느 방으로 갈까요?', <RoomsPanel current={roomId} counts={counts} onGo={goRoom} />],

@@ -10,7 +10,9 @@ export const CONFIG = {
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_O1SEOQa-kRGuBI0IEFlMrw_lb7VGdvd',
 
   // mp3 찬양 목록: public/hymns/ 폴더에 넣고 여기에 적으세요 (AI 찬양, 공공영역 녹음 등)
+  // 첫 번째 곡은 거실 가정예배의 "여는 찬양"에서 나와요
   hymns: [
-    // { title: '아침 찬양 (AI)', url: 'hymns/morning.mp3', credit: 'Suno로 제작' },
+    { title: '찬양 1', url: 'hymns/song1.mp3', credit: '우리 모임 찬양' },
+    { title: '찬양 2', url: 'hymns/song2.mp3', credit: '우리 모임 찬양' },
   ],
 }
