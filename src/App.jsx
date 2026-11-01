@@ -92,7 +92,7 @@ const EMOTES = {
 
 function Home({ profile, setProfile, onLogout }) {
   const music = useMemo(() => new Music(), [])
-  const [roomId, setRoomId] = useState(() => store.get('room') || 'living')
+  const [roomId, setRoomId] = useState('living') // 들어올 때는 모두 거실에서 만나요
   const room = roomById(roomId)
   const [pos, setPos] = useState(room.start)
   const [pose, setPose] = useState('stand')
@@ -292,7 +292,6 @@ function Home({ profile, setProfile, onLogout }) {
     setPose('stand')
     setSheet(null)
     setRoomId(id)
-    store.set('room', id)
     setPos(roomById(id).start)
   }
 
@@ -372,7 +371,7 @@ function Home({ profile, setProfile, onLogout }) {
         </button>
         <div className="hud-pills">
           <span className="pill" title={live ? '실시간 연결됨' : 'Supabase를 설정하면 다른 집과 함께할 수 있어요 (README 참고)'}>
-            {live ? '🟢' : '🟡'} {total}명{live ? ' 함께' : ''}
+            {live ? '🟢' : '🟡'} {total}명{live ? ' 함께' : ''}{total > 1 && counts[roomId] < total ? ` · ${room.name} ${counts[roomId]}명` : ''}
           </span>
           <button className="pill" onClick={() => setSheet('board')}>🌱 {done.length}/4</button>
         </div>

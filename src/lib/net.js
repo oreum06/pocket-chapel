@@ -30,20 +30,38 @@ async function connectSupabase({ room, id, state, onPeers, onEvent }) {
     onPeers(peers)
   })
   ch.on('broadcast', { event: 'ev' }, ({ payload }) => onEvent(payload))
+
+  // 내 최신 상태. 연결이 끊겼다 다시 붙으면(휴대폰 화면 꺼짐, 앱 전환 등)
+  // Supabase가 내 "접속 중" 표시를 지워 버리므로, 다시 붙을 때마다 새로 알려야 해요.
+  let latest = state
+  let joined = false
+  const announce = () => { if (joined) ch.track(latest).catch(() => {}) }
+
   await new Promise((ok, fail) => {
+    let first = true
     const t = setTimeout(() => fail(new Error('timeout')), 10000)
     ch.subscribe((status) => {
-      if (status === 'SUBSCRIBED') { clearTimeout(t); ok() }
-      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { clearTimeout(t); fail(new Error(status)) }
+      if (status === 'SUBSCRIBED') {
+        joined = true
+        announce() // 처음 연결 + 다시 연결될 때마다
+        if (first) { first = false; clearTimeout(t); ok() }
+      } else {
+        joined = false
+        if (first && (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT')) { clearTimeout(t); fail(new Error(status)) }
+      }
     })
   })
-  let pending = null, timer = null
+
+  let timer = null
   const update = (s) => {
-    pending = s
+    latest = s
     if (timer) return
-    timer = setTimeout(() => { timer = null; ch.track(pending) }, 250)
+    timer = setTimeout(() => { timer = null; announce() }, 250)
   }
-  update(state)
+  // 혹시 놓치는 경우를 대비한 안전장치: 화면으로 돌아왔을 때, 인터넷이 다시 연결됐을 때, 30초마다
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') announce() })
+  window.addEventListener('online', announce)
+  setInterval(announce, 30000)
   window.addEventListener('beforeunload', () => ch.untrack())
   return { mode: 'live', update, emit: (ev) => ch.send({ type: 'broadcast', event: 'ev', payload: { ...ev, from: id } }) }
 }
