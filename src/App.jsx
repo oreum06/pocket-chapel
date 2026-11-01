@@ -13,6 +13,14 @@ import { api, login, store, todayKey } from './lib/api.js'
 import { connect, roomIdFromCode } from './lib/net.js'
 import { Music } from './lib/music.js'
 import { speak, stopSpeaking } from './lib/speech.js'
+import { isMuted, playSfx, setMuted } from './lib/sfx.js'
+
+// 고양이: 말풍선과 소리를 짝지어 무작위로
+const CAT = [
+  { text: '냐옹~ 💤', sound: 'cat-meow', ms: 2000 },
+  { text: '고롱고롱…', sound: 'cat-purr', ms: 3200 },
+  { text: '냥! 🐾', sound: 'cat-nyang', ms: 1600 },
+]
 
 const uid = store.get('uid') || crypto.randomUUID()
 store.set('uid', uid)
@@ -109,6 +117,8 @@ function Home({ profile, setProfile, onLogout }) {
   const [requests, setRequests] = useState([])
   const [catBubble, setCatBubble] = useState(null)
   const [live, setLive] = useState(false)
+  const [muted, setMutedState] = useState(isMuted())
+  const lastCat = useRef(-1)
   const net = useRef(null)
   const roomRef = useRef(roomId)
   const posRef = useRef(pos)
@@ -310,10 +320,18 @@ function Home({ profile, setProfile, onLogout }) {
           else showToast('가정예배가 진행 중이에요')
           break
         case 'lamp': setLampOff((v) => !v); break
-        case 'cat':
-          setCatBubble({ id: Math.random(), text: ['냐옹~ 💤', '고롱고롱…', '냥! 🐾'][Math.floor(Math.random() * 3)], x: (s.x0 + s.x1) / 2, y: s.y0 })
-          setTimeout(() => setCatBubble(null), 2200)
+        case 'cat': {
+          // 같은 소리가 연달아 나오지 않게
+          let i = Math.floor(Math.random() * CAT.length)
+          if (i === lastCat.current) i = (i + 1) % CAT.length
+          lastCat.current = i
+          const cat = CAT[i]
+          const id = Math.random()
+          setCatBubble({ id, text: cat.text, x: (s.x0 + s.x1) / 2, y: s.y0 })
+          playSfx(cat.sound) // 고양이 소리는 누른 사람에게만
+          setTimeout(() => setCatBubble((b) => (b && b.id === id ? null : b)), cat.ms)
           break
+        }
         case 'music': music.bell(); setSheet('music'); break
         case 'tea': case 'melon': case 'bread': emote(s.action); break
         default: setSheet(s.action)
@@ -374,6 +392,14 @@ function Home({ profile, setProfile, onLogout }) {
             {live ? '🟢' : '🟡'} {total}명{live ? ' 함께' : ''}{total > 1 && counts[roomId] < total ? ` · ${room.name} ${counts[roomId]}명` : ''}
           </span>
           <button className="pill" onClick={() => setSheet('board')}>🌱 {done.length}/4</button>
+          <button
+            className="pill"
+            aria-label={muted ? '효과음 켜기' : '효과음 끄기'}
+            title={muted ? '효과음 켜기' : '효과음 끄기'}
+            onClick={() => { setMuted(!muted); setMutedState(!muted); showToast(muted ? '🔈 효과음을 켰어요' : '🔇 효과음을 껐어요') }}
+          >
+            {muted ? '🔇' : '🔈'}
+          </button>
         </div>
       </header>
 
